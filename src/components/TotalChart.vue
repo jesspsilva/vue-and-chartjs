@@ -23,19 +23,19 @@
 			v-if="selectedChartType === 'Bar'"
 			:data="barChartData"
 			:options="barChartOptions"
-			:height="chartHeight"
+			:height="chartHeight.bar"
 		/>
 		<PieChart
 			v-if="selectedChartType === 'Pie'"
 			:data="pieChartData"
 			:options="pieChartOptions"
-			:height="chartHeight"
+			:height="chartHeight.pie"
 		/>
 		<DoughnutChart
 			v-if="selectedChartType === 'Doughnut'"
 			:data="pieChartData"
 			:options="pieChartOptions"
-			:height="chartHeight"
+			:height="chartHeight.pie"
 		/>
 	</div>
 </template>
@@ -78,8 +78,11 @@ export default {
 		},
 
 		chartHeight: {
-			type: Number,
-			default: 200,
+			type: Object,
+			default: () => ({
+				bar: 200,
+				pie: 300,
+			}),
 		},
 	},
 
