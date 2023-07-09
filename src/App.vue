@@ -1,35 +1,67 @@
 <template>
 	<div class="dashboard">
-		<div class="dashboard__left-panel">
-			<div class="dashboard__left-panel-header">
-				<h3>Data Visualization</h3>
-				<p>
-					Et Lorem incididunt esse velit consequat commodo magna irure duis
+		<LeftPanel
+			title="Data Data Visualization"
+			description="Et Lorem incididunt esse velit consequat commodo magna irure duis
 					Lorem deserunt. Tempor veniam esse deserunt fugiat id officia irure
 					dolor nulla id duis reprehenderit minim. Nostrud labore ullamco
 					excepteur laboris cillum tempor aute voluptate adipisicing nulla.
 					Dolor pariatur incididunt irure pariatur veniam ipsum proident.
-					Exercitation labore
-				</p>
+					Exercitation labore"
+			:navbar-items="navbarItems"
+			@update-selected-item="updateItem"
+			class="dashboard__left-panel"
+		/>
+		<div class="dashboard__content">
+			<div class="dashboard__comparison_charts" v-if="selectedItem === 1">
+				<div class="dashboard__charts">
+					<TotalChart
+						title="Pokemon types"
+						description="Number of pokemons by type"
+						:labels="pokemonTypesLabels"
+						:data="pokemonTypesData"
+					/>
+					<TotalChart
+						title="Pokemon abilities"
+						description="Number of pokemons by ability"
+						:labels="pokemonAbilitiesLabels"
+						:data="pokemonAbilitiesData"
+					/>
+				</div>
+				<div class="dashboard__charts">
+					<ComparisonChart
+						v-if="pokemonStatsData.length"
+						title="Pokemon stats"
+						description="Comparison of pokemons by stats"
+						:labels="pokemonStatsLabels"
+						:data="pokemonStatsData"
+					/>
+				</div>
 			</div>
-			<Navbar :items="navbarItems" @update-selected-item="updateItem" />
 		</div>
-		<div class="dashboard__content"></div>
 	</div>
 </template>
 
 <script>
-import Navbar from "./components/Navbar.vue";
+import LeftPanel from "./components/LeftPanel.vue";
+import TotalChart from "./components/TotalChart.vue";
+import ComparisonChart from "./components/ComparisonChart.vue";
 
 export default {
 	name: "App",
+
+	components: {
+		LeftPanel,
+		TotalChart,
+		ComparisonChart,
+	},
 
 	data() {
 		return {
 			navbarItems: [
 				{
 					id: 1,
-					label: "Item 1",
+					label: "Pokemon comparison",
 				},
 				{
 					id: 2,
@@ -41,16 +73,159 @@ export default {
 				},
 			],
 			selectedItem: 1,
+			pokemonsAPIData: [],
+			pokemonTypes: {},
+			pokemonAbilities: {},
+			pokemonStatsLabels: [],
+			pokemonStatsData: [],
 		};
 	},
 
-	components: {
-		Navbar,
+	async created() {
+		await this.fetchPokemons();
+	},
+
+	computed: {
+		pokemonTypesData: function () {
+			return Object.values(this.pokemonTypes);
+		},
+
+		pokemonTypesLabels: function () {
+			return Object.keys(this.pokemonTypes).map(
+				(type) => type[0].toUpperCase() + type.slice(1)
+			);
+		},
+
+		pokemonAbilitiesData: function () {
+			return Object.values(this.pokemonAbilities);
+		},
+
+		pokemonAbilitiesLabels: function () {
+			return Object.keys(this.pokemonAbilities).map(
+				(ability) => ability[0].toUpperCase() + ability.slice(1)
+			);
+		},
+
+		radarGraphBackgroundColor: function () {
+			return this.generateColorArray(20);
+		},
 	},
 
 	methods: {
 		updateItem(id) {
 			this.selectedItem = id;
+		},
+
+		async fetchPokemons() {
+			try {
+				const response = await fetch(
+					"https://pokeapi.co/api/v2/pokemon?limit=20&offset=0"
+				);
+
+				this.pokemonsAPIData = await response.json();
+
+				const pokemonsPromises = this.pokemonsAPIData.results.map((pokemon) =>
+					this.fetchSinglePokemonData(pokemon.url)
+				);
+
+				const pokemonsData = await Promise.all(pokemonsPromises);
+
+				const treatedPokemonData = this.formatPokemonsData(pokemonsData);
+				this.pokemonTypes = treatedPokemonData.types;
+				this.pokemonAbilities = treatedPokemonData.abilities;
+				this.pokemonStatsLabels = treatedPokemonData.statsLabels;
+				this.pokemonStatsData = treatedPokemonData.stats.map((stat, index) => {
+					return {
+						label: stat.label,
+						data: stat.data,
+						backgroundColor: this.radarGraphBackgroundColor[index],
+						borderColor: this.radarGraphBackgroundColor[index],
+						pointBackgroundColor: this.radarGraphBackgroundColor[index],
+						pointBorderColor: "#fff",
+						pointHoverBackgroundColor: "#fff",
+						pointHoverBorderColor: this.radarGraphBackgroundColor[index],
+					};
+				});
+			} catch (error) {
+				console.error("Error fetching Pokémon data:", error);
+			}
+		},
+
+		async fetchSinglePokemonData(url) {
+			try {
+				const response = await fetch(url);
+				return await response.json();
+			} catch (error) {
+				console.error("Error fetching Pokémon data:", error);
+				throw error;
+			}
+		},
+
+		formatPokemonsData(pokemonsAPIData) {
+			const pokemonsTypes = {};
+			const pokemonsAbilities = {};
+			const pokemonsStatsLabels = [];
+			const pokemonsStatsValues = [];
+
+			pokemonsAPIData.forEach((pokemon) => {
+				pokemon.types.forEach((type) => {
+					if (pokemonsTypes[type.type.name]) {
+						pokemonsTypes[type.type.name] += 1;
+					} else {
+						pokemonsTypes[type.type.name] = 1;
+					}
+				});
+
+				pokemon.abilities.forEach((ability) => {
+					if (pokemonsAbilities[ability.ability.name]) {
+						pokemonsAbilities[ability.ability.name] += 1;
+					} else {
+						pokemonsAbilities[ability.ability.name] = 1;
+					}
+				});
+
+				pokemon.stats.forEach((stat) => {
+					const statName =
+						stat.stat.name[0].toUpperCase() + stat.stat.name.slice(1);
+					if (!pokemonsStatsLabels.includes(statName)) {
+						pokemonsStatsLabels.push(statName);
+					}
+				});
+
+				pokemonsStatsValues.push({
+					label: pokemon.name[0].toUpperCase() + pokemon.name.slice(1),
+					data: pokemon.stats.map((stat) => stat.base_stat),
+				});
+			});
+
+			return {
+				types: pokemonsTypes,
+				abilities: pokemonsAbilities,
+				statsLabels: pokemonsStatsLabels,
+				stats: pokemonsStatsValues,
+			};
+		},
+
+		generateColorArray(count) {
+			const colors = [];
+
+			for (let i = 0; i < count; i++) {
+				const color = this.getRandomColor();
+				colors.push(color);
+			}
+
+			return colors;
+		},
+
+		getRandomColor() {
+			const letters = "0123456789ABCDEF";
+			let color = "#";
+
+			for (let i = 0; i < 6; i++) {
+				color += letters[Math.floor(Math.random() * 16)];
+			}
+
+			return color;
 		},
 	},
 };
@@ -71,6 +246,17 @@ body {
 	text-align: left;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	background-color: #f7f7f7f7;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+	padding: 0;
+	margin: 0;
+	text-align: left;
 }
 
 .dashboard {
@@ -78,31 +264,21 @@ body {
 	height: 100vh;
 
 	&__left-panel {
-		width: 350px;
-		background-color: #fff;
-		border-right: 1px solid #dcdde2;
-		box-shadow: 0 2px 11px rgba(0, 0, 0, 0.05);
+		flex: 0 0 350px;
+	}
 
-		transition: width 0.3s ease-in-out;
+	&__content {
+		width: 100%;
+		margin: 30px;
 
-		&-header {
-			padding: 30px;
-		}
+		overflow: scroll;
+	}
 
-		h3 {
-			font-size: 20px;
-			font-weight: 600;
-			line-height: 1.5;
-			color: rgb(4, 1, 28);
-			text-align: left;
-		}
-
-		p {
-			font-size: 14px;
-			line-height: 1.2;
-			color: #666;
-			text-align: left;
-		}
+	&__charts {
+		margin-top: 30px;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+		gap: 30px;
 	}
 }
 </style>
