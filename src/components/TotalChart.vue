@@ -137,16 +137,6 @@ export default {
 				},
 			],
 			selectedChartType: "Bar",
-			backgroundColors: [
-				"#d1da7e",
-				"#f1c40f",
-				"#e67e22",
-				"#e74c3c",
-				"#95a5a6",
-				"#f39c12",
-				"#d35400",
-				"#c0392b",
-			],
 		};
 	},
 	computed: {
@@ -155,9 +145,8 @@ export default {
 				labels: this.labels,
 				datasets: [
 					{
-						data: this.data,
-						backgroundColor: "#d1da7e",
-						borderColor: "#d1da7e",
+						data: this.data.values,
+						backgroundColor: this.data.backgroundColor.bar,
 					},
 				],
 			};
@@ -168,8 +157,8 @@ export default {
 				labels: this.labels,
 				datasets: [
 					{
-						data: this.data,
-						backgroundColor: this.backgroundColors,
+						data: this.data.values,
+						backgroundColor: this.data.backgroundColor.pie,
 					},
 				],
 			};

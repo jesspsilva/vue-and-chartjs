@@ -87,7 +87,13 @@ export default {
 
 	computed: {
 		pokemonTypesData: function () {
-			return Object.values(this.pokemonTypes);
+			return {
+				values: Object.values(this.pokemonAbilities),
+				backgroundColor: {
+					bar: "#d1da7e",
+					pie: this.pokemonTypesGraphColors,
+				},
+			};
 		},
 
 		pokemonTypesLabels: function () {
@@ -97,7 +103,21 @@ export default {
 		},
 
 		pokemonAbilitiesData: function () {
-			return Object.values(this.pokemonAbilities);
+			return {
+				values: Object.values(this.pokemonAbilities),
+				backgroundColor: {
+					bar: "#a2cb96",
+					pie: this.pokemonAbilitiesGraphColors,
+				},
+			};
+		},
+
+		pokemonTypesGraphColors: function () {
+			return this.generateColorArray(this.pokemonTypesLabels.length);
+		},
+
+		pokemonAbilitiesGraphColors: function () {
+			return this.generateColorArray(this.pokemonAbilitiesLabels.length);
 		},
 
 		pokemonAbilitiesLabels: function () {
