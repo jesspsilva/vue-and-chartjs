@@ -46,6 +46,7 @@
 import LeftPanel from "./components/LeftPanel.vue";
 import TotalChart from "./components/TotalChart.vue";
 import ComparisonChart from "./components/ComparisonChart.vue";
+import { chartsLabelsColors } from "./utils/charts-labels-colors.js";
 
 export default {
 	name: "App",
@@ -113,11 +114,11 @@ export default {
 		},
 
 		pokemonTypesGraphColors: function () {
-			return this.generateColorArray(this.pokemonTypesLabels.length);
+			return this.selectRandomColors(this.pokemonTypesLabels.length);
 		},
 
 		pokemonAbilitiesGraphColors: function () {
-			return this.generateColorArray(this.pokemonAbilitiesLabels.length);
+			return this.selectRandomColors(this.pokemonAbilitiesLabels.length);
 		},
 
 		pokemonAbilitiesLabels: function () {
@@ -127,7 +128,7 @@ export default {
 		},
 
 		radarGraphBackgroundColor: function () {
-			return this.generateColorArray(20);
+			return this.selectRandomColors(this.pokemonsAPIData.results.length);
 		},
 	},
 
@@ -226,26 +227,15 @@ export default {
 			};
 		},
 
-		generateColorArray(count) {
-			const colors = [];
+		selectRandomColors(count) {
+			const colorsCopy = [...chartsLabelsColors];
 
-			for (let i = 0; i < count; i++) {
-				const color = this.getRandomColor();
-				colors.push(color);
+			for (let i = colorsCopy.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[colorsCopy[i], colorsCopy[j]] = [colorsCopy[j], colorsCopy[i]];
 			}
 
-			return colors;
-		},
-
-		getRandomColor() {
-			const letters = "0123456789ABCDEF";
-			let color = "#";
-
-			for (let i = 0; i < 6; i++) {
-				color += letters[Math.floor(Math.random() * 16)];
-			}
-
-			return color;
+			return colorsCopy.slice(0, count);
 		},
 	},
 };
