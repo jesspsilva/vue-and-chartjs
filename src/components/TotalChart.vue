@@ -5,10 +5,36 @@
 				<h2>{{ title }}</h2>
 				<p v-if="description">{{ description }}</p>
 			</div>
+			<ElSelect
+				v-model="selectedChartType"
+				size="large"
+				class="total-chart__type-select"
+				popper-class="total-chart__type-select-dropdown"
+			>
+				<ElOption
+					v-for="(chart, index) in availableChartTypes"
+					:key="`chart-type-${index}`"
+					:label="chart.label"
+					:value="chart.label"
+				/>
+			</ElSelect>
 		</div>
 		<BarChart
+			v-if="selectedChartType === 'Bar'"
 			:data="barChartData"
 			:options="barChartOptions"
+			:height="chartHeight"
+		/>
+		<PieChart
+			v-if="selectedChartType === 'Pie'"
+			:data="pieChartData"
+			:options="pieChartOptions"
+			:height="chartHeight"
+		/>
+		<DoughnutChart
+			v-if="selectedChartType === 'Doughnut'"
+			:data="pieChartData"
+			:options="pieChartOptions"
 			:height="chartHeight"
 		/>
 	</div>
@@ -16,12 +42,18 @@
 
 <script>
 import BarChart from "./BarChart.vue";
+import PieChart from "./PieChart.vue";
+import DoughnutChart from "./DoughnutChart.vue";
+import { ElSelect } from "element-plus";
 
 export default {
 	name: "TotalChart",
 
 	components: {
 		BarChart,
+		ElSelect,
+		PieChart,
+		DoughnutChart,
 	},
 
 	props: {
@@ -72,6 +104,49 @@ export default {
 					},
 				},
 			},
+			pieChartOptions: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: {
+						position: "bottom",
+						align: "start",
+						labels: {
+							usePointStyle: true,
+							borderWidth: 0,
+							pointStyle: "rectRounded",
+						},
+					},
+					tooltip: {
+						usePointStyle: true,
+						borderWidth: 0,
+						pointStyle: "rectRounded",
+						caretSize: 0,
+					},
+				},
+			},
+			chartTypes: [
+				{
+					label: "Bar",
+				},
+				{
+					label: "Pie",
+				},
+				{
+					label: "Doughnut",
+				},
+			],
+			selectedChartType: "Bar",
+			backgroundColors: [
+				"#d1da7e",
+				"#f1c40f",
+				"#e67e22",
+				"#e74c3c",
+				"#95a5a6",
+				"#f39c12",
+				"#d35400",
+				"#c0392b",
+			],
 		};
 	},
 	computed: {
@@ -87,6 +162,24 @@ export default {
 				],
 			};
 		},
+
+		pieChartData() {
+			return {
+				labels: this.labels,
+				datasets: [
+					{
+						data: this.data,
+						backgroundColor: this.backgroundColors,
+					},
+				],
+			};
+		},
+
+		availableChartTypes() {
+			return this.chartTypes.filter(
+				(type) => type.label !== this.selectedChartType
+			);
+		},
 	},
 };
 </script>
@@ -100,10 +193,18 @@ export default {
 
 	padding: 20px;
 
+	&__type-select {
+		max-width: 120px;
+	}
+
+	&__type-select-dropdown .el-select-dropdown__item {
+		font-family: Avenir, Helvetica, Arial, sans-serif;
+	}
+
 	&__header {
 		display: flex;
 		justify-content: space-between;
-		align-items: center;
+		align-items: self-start;
 
 		margin-bottom: 20px;
 
